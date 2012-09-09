@@ -1,0 +1,46 @@
+
+This application is a name service service.  It does not forward the traffic
+itself, but instead provides an ip adress or the client should connect to.
+
+The server is loaded with a weighted list of addresses for a given service.
+A client conects to our service and requests an address.
+We choose a server at random and return it to the client.
+The client then connects to the 'real' service.
+
+This adds an extra connect phase, which will probably require adjusting your
+connect or configuration logic.
+
+This application does not do liveness checks, but instead relies on the pool
+membership being updated by a "checker" client.
+
+Currently, communication is done via UDP.  TCP based lookup is implemented but disabled (and uses a different internal protocol.)
+The control service uses msgpack, but that is only required for online configuration changes.
+
+I might update the UDP protocol to include a sequence number.
+
+Current API ideas:
+    
+    req($pool) => $machine (= ipaddr:port or name:port)
+
+    # server list functions
+    add($pool,$machine,$weight)
+    set($pool,$machine,$new_weight)
+    del($pool,$machine)
+    list $pool => [ ($machine, $weight, $status), ... ]
+
+    # machine-based functions?
+    down $machine => () [ $machine is set to 0 weight for all pools -- how do we identify 'machine' ? ]
+    up $machine => () [ $machine is replaced into pools at old weight ]
+
+    # configuration
+    savecfg
+    reloadcfg
+
+Future Work:
+    tcp connect liveness checks
+    protocol specific liveness checks
+        http (HEAD)
+        mysql
+        redis and friends
+        ... ?
+    better config language
