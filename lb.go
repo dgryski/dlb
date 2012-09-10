@@ -231,40 +231,37 @@ func main() {
 				continue
 			}
 
-			log.Println("packet from: ", addr)
-
-			if n != int(b[0])+1 {
-				log.Println("bad packet: n=", n, "b[0]=", b[0])
+			if n < 3 || n != int(b[2])+3 {
+				log.Println("bad packet from ", addr)
+				continue
 			}
 
-			s := string(b[1:n])
-
-			log.Println("lookup request for service=", s)
+			req := binary.BigEndian.Uint16(b[:2])
+			s := string(b[3:n])
 
 			p := pools[s]
 
-			go func(pconn net.PacketConn, addr net.Addr, service string, p *Pool) {
+			go func(pconn net.PacketConn, addr net.Addr, service string, req uint16, p *Pool) {
 
-				var b [10]byte
+				var b [12]byte
 
+				binary.BigEndian.PutUint16(b[:2], req)
 				reqCrc := crc32.ChecksumIEEE([]byte(service))
-				binary.LittleEndian.PutUint32(b[:], reqCrc)
+				binary.BigEndian.PutUint32(b[2:], reqCrc)
 
 				if p != nil {
 					m := p.selectMachine()
-					copy(b[4:], m.packedAddr[:])
+					copy(b[6:], m.packedAddr[:])
 				} else {
-					log.Println("service lookup failed -- returning error")
+					log.Println("service lookup for", s, "failed -- returning error")
 				}
-
-				log.Println("returning bytes: ", b)
 
 				n, err := pconn.WriteTo(b[:], addr)
 
-				if n != 10 || err != nil {
-					log.Println("error sending packet: ", n, "/10 bytes written, err=", err)
+				if n != len(b) || err != nil {
+					log.Println("error sending packet:", n, "/", len(b), "bytes written, err=", err)
 				}
-			}(pconn, addr, s, p)
+			}(pconn, addr, s, req, p)
 		}
 	}(cfg.Port, pools)
 
