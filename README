@@ -1,5 +1,5 @@
 
-This application is a name service service.  It does not forward the traffic
+This application is a name service.  It does not forward the traffic
 itself, but instead provides an ip adress or the client should connect to.
 
 The server is loaded with a weighted list of addresses for a given service.
@@ -16,10 +16,8 @@ membership being updated by a "checker" client.
 Currently, communication is done via UDP.  TCP based lookup is implemented but disabled (and uses a different internal protocol.)
 The control service uses msgpack, but that is only required for online configuration changes.
 
-I might update the UDP protocol to include a sequence number.
-
 Current API ideas:
-    
+
     req($pool) => $machine (= ipaddr:port or name:port)
 
     # server list functions
