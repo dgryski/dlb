@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	msgpack "github.com/ugorji/go-msgpack"
+	codec "github.com/ugorji/go/codec"
 	"hash/crc32"
 	"log"
 	"math/rand"
@@ -282,7 +282,8 @@ func main() {
 			log.Println(err)
 			continue
 		}
-		c := msgpack.NewCustomRPCServerCodec(conn, nil)
+		var h codec.MsgpackHandle
+		c := codec.MsgpackSpecRpc.ServerCodec(conn, &h)
 
 		go rpc.ServeCodec(c)
 	}
